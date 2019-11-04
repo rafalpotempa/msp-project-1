@@ -1,0 +1,3 @@
+".\Objects\p7_7seg_mux.obj" 
+TO ".\Objects\p7_7seg_mux" 
+PRINT(".\Listings\p7_7seg_mux.m51") RAMSIZE(256) 

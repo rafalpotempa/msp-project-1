@@ -1,0 +1,226 @@
+A51 MACRO ASSEMBLER  P7_7SEG_MUX                                                          10/21/2019 14:02:08 PAGE     1
+
+
+MACRO ASSEMBLER A51 V8.02c
+NO OBJECT MODULE REQUESTED
+ASSEMBLER INVOKED BY: C:\Keil_v5\C51\BIN\A51.EXE p7_7seg_mux.asm SET(SMALL) DEBUG PRINT(.\Listings\p7_7seg_mux.lst) OBJE
+                      CT(.\Objects\p7_7seg_mux.obj) EP
+
+LOC  OBJ            LINE     SOURCE
+
+                       1     ;------------------------------------------------
+                       2     ; Wyswietlanie multiplekosowane
+                       3     ; Odswiezanie f(REF) = 80Hz 
+                       4     ; Skanowanie f(SCAN) = 6 x 80 = 480
+                       5     ; 
+                       6     ;------------------------------------------------
+                       7     
+----                   8     DSEG    AT      28H
+                       9     
+  00FB                10     TH1_INIT        EQU     251
+  0006                11     DISP_MAX        EQU     6       
+0028                  12     DISP_BUF:       DS      DISP_MAX;       Bufor wyswietlacza
+002E                  13     DISP_PTR:       DS      1;                      Wsakznik/licznik wyswietlacza
+                      14             
+----                  15     BSEG    AT      0
+                      16     
+                      17     
+----                  18     CSEG    AT      0
+                      19             
+0000                  20     TO_CNT:
+0000                  21             MOV MY_CNT,#0FFh
+*** _____________________________________^
+*** ERROR #A45 IN 21 (p7_7seg_mux.asm, LINE 21): UNDEFINED SYMBOL (PASS-2)
+0003                  22             MOV A,MY_CNT
+*** _______________________________________^
+*** ERROR #A45 IN 22 (p7_7seg_mux.asm, LINE 22): UNDEFINED SYMBOL (PASS-2)
+0005 04               23             INC A
+0006 B40A01           24             CJNE A,#10,CNT_OK
+0009 E4               25             CLR A
+000A                  26     CNT_OK:
+000A                  27             MOV MY_CNT,A
+*** _____________________________________^
+*** ERROR #A45 IN 27 (p7_7seg_mux.asm, LINE 27): UNDEFINED SYMBOL (PASS-2)
+000C                  28             MOV DPTR,#TO_SEG
+*** ___________________________________________^
+*** ERROR #A45 IN 28 (p7_7seg_mux.asm, LINE 28): UNDEFINED SYMBOL (PASS-2)
+000F                  29             MOV A,@A + DPTR
+*** _______________________________________^
+*** ERROR #A40 IN 29 (p7_7seg_mux.asm, LINE 29): INVALID REGISTER
+000F F528             30             MOV DISP_BUF,A
+                      31                     
+0011                  32     RESET:  
+0011 801A             33             JMP             INIT
+0003                  34     ORG 0003H
+0003 0190             35             JMP             INT0_ISR
+000B                  36     ORG 00BH
+000B 0190             37             JMP             T0_ISR
+0013                  38     ORG 0013H
+0013 807B             39             JMP             INT1_ISR
+001B                  40     ORG 001BH
+001B 8045             41             JMP             T1_ISR
+0023                  42     ORG 0023H
+0023 806B             43             JMP             UART_ISR
+002B                  44     ORG 002BH
+002B 8063             45             JMP             T2_ISR
+                      46     
+002D                  47     INIT:   
+A51 MACRO ASSEMBLER  P7_7SEG_MUX                                                          10/21/2019 14:02:08 PAGE     2
+
+002D 7F78             48             MOV             R7,#120;
+002F 7808             49             MOV             R0,#8
+0031 7400             50             MOV             A,#0;
+0033                  51     INIT_LP:
+0033 F6               52             MOV             @R0,A
+0034 08               53             INC             R0
+0035 DFFC             54             DJNZ    R7,INIT_LP
+0037                  55     INIT_STACK:
+0037 75817F           56             MOV             SP,#7FH
+                      57             
+                      58             ;Wylacz wyswietlacz
+003A 758000           59             MOV             P0,#0
+003D 7586FF           60             MOV             P0 + 6, #0FFh
+0040 7590FF           61             MOV             P1,#0FFh
+                      62             
+0043                  63     INIT_DISP_BUF:  
+                      64             ;Inicjalizacja bufora wysw.
+0043 900091           65             MOV             DPTR,#TO_7SEG
+0046 782D             66             MOV             R0,#DISP_BUF + 5
+0048 7F06             67             MOV             R7,#DISP_MAX
+                      68     
+004A                  69     INIT_DISP_BUF_LP:
+004A E4               70             CLR             A
+004B 93               71             MOVC    A,@A + DPTR
+004C F6               72             MOV             @R0,A
+004D A3               73             INC             DPTR
+004E 18               74             DEC             R0
+004F DFF9             75             DJNZ    R7,INIT_DISP_BUF_LP
+                      76             
+0051                  77     INIT_TIMER:     
+0051 758DFB           78             MOV             TH1,#TH1_INIT
+                      79     ;GATE|C/nT|M1|M0
+                      80     ;MODE 0 - 8bit TH + div 5bit  TL
+                      81     ;MODE 1 - 16 bit TH + TL
+                      82     ;MODE 2 - 8 bit TH ld TL
+                      83     ;MODE 3 - 2 x 8bit TL->T0, TH->T1
+0054 758910           84             MOV             TMOD,#10H
+                      85     ;TF1|TR1|TF0|TR0|IE1|IT1|IE0|IT1
+                      86     ;TFx - Timer OVF INT trigger
+                      87     ;TRx - Timer Run
+                      88     ;IEx - Ext Interrupt detection (Auto CLR after reception)
+                      89     ;ITx - 0 - Level/ 1 - Edge Int triggering
+0057 758840           90             MOV             TCON,#40H
+005A                  91     INIT_INT:
+                      92     ;EA|-|ET2|ES|ET1|EX1|ET0|EX0
+                      93     ;EA - Global Int Enable
+                      94     ;ET - Timer
+                      95     ;ES - Serial
+                      96     ;EX - External
+005A 75A888           97             MOV             IE,#10001000B   
+005D 7586FF           98             MOV             P0+6,#0FFH ;Port overdrive              
+0060                  99     MAIN_LOOP:
+0060 80FE            100             SJMP    MAIN_LOOP
+                     101     
+                     102     
+0062                 103     T1_ISR:
+                     104             ;Adjust timer to 80Hz -> 1280 cycles only!!!
+0062 758DFB          105             MOV             TH1,#TH1_INIT
+                     106             ;ISR Prolog
+0065 C0D0            107             PUSH    PSW
+0067 C0E0            108             PUSH    ACC
+0069 E8              109             MOV             A,R0
+006A C0E0            110             PUSH    ACC     
+006C                 111     T1_ISR_BODY:
+                     112             ;ISR Body
+006C 7590FF          113             MOV             P1,#0FFh        
+A51 MACRO ASSEMBLER  P7_7SEG_MUX                                                          10/21/2019 14:02:08 PAGE     3
+
+006F E52E            114             MOV             A,DISP_PTR
+0071 2428            115             ADD             A,#DISP_BUF
+0073 F8              116             MOV             R0,A
+0074 8680            117             MOV             P0,@R0
+0076 E52E            118             MOV             A,DISP_PTR
+0078 9000A1          119             MOV             DPTR,#TO_RING
+007B 93              120             MOVC    A,@A + DPTR     
+007C F590            121             MOV             P1,A
+007E E52E            122             MOV             A,DISP_PTR
+0080 04              123             INC             A
+0081 B40601          124             CJNE    A,#DISP_MAX,T1_ISR_EX
+0084 E4              125             CLR             A
+0085                 126     T1_ISR_EX:
+                     127             ;ISR Epilog
+0085 F52E            128             MOV             DISP_PTR,A
+0087 D0E0            129             POP             ACC
+0089 A8E0            130             MOV             R0,ACC
+008B D0E0            131             POP             ACC
+008D D0D0            132             POP             PSW
+008F 32              133             RETI
+                     134             
+0090                 135     INT0_ISR:
+0090                 136     INT1_ISR:
+0090                 137     UART_ISR:
+0090                 138     T2_ISR:
+0090                 139     T0_ISR:
+0090 32              140             RETI    
+                     141     
+0091                 142     TO_7SEG:        
+0091 DE82ECE6        143             DB      0xDE, 0x82, 0xEC, 0xE6
+0095 B2767EC2        144             DB      0xB2, 0x76, 0x7E, 0xC2
+0099 FEF61CBA        145             DB      0xFE, 0xF6, 0x1C, 0xBA
+009D F8FA2000        146             DB      0xF8, 0xFA, 0x20, 0x00
+                     147                     
+00A1                 148     TO_RING:                
+00A1 FEFDFBF7        149             DB 0xFE, 0xFD, 0xFB, 0xF7, 0xEF, 0xDF
+00A5 EFDF                    
+                     150     
+                     151     END     
+A51 MACRO ASSEMBLER  P7_7SEG_MUX                                                          10/21/2019 14:02:08 PAGE     4
+
+SYMBOL TABLE LISTING
+------ ----- -------
+
+
+N A M E             T Y P E  V A L U E   ATTRIBUTES
+
+ACC. . . . . . . .  D ADDR   00E0H   A   
+CNT_OK . . . . . .  C ADDR   000AH   A   
+DISP_BUF . . . . .  D ADDR   0028H   A   
+DISP_MAX . . . . .  N NUMB   0006H   A   
+DISP_PTR . . . . .  D ADDR   002EH   A   
+IE . . . . . . . .  D ADDR   00A8H   A   
+INIT . . . . . . .  C ADDR   002DH   A   
+INIT_DISP_BUF. . .  C ADDR   0043H   A   
+INIT_DISP_BUF_LP .  C ADDR   004AH   A   
+INIT_INT . . . . .  C ADDR   005AH   A   
+INIT_LP. . . . . .  C ADDR   0033H   A   
+INIT_STACK . . . .  C ADDR   0037H   A   
+INIT_TIMER . . . .  C ADDR   0051H   A   
+INT0_ISR . . . . .  C ADDR   0090H   A   
+INT1_ISR . . . . .  C ADDR   0090H   A   
+MAIN_LOOP. . . . .  C ADDR   0060H   A   
+MY_CNT . . . . . .    ----   -----       
+P0 . . . . . . . .  D ADDR   0080H   A   
+P1 . . . . . . . .  D ADDR   0090H   A   
+PSW. . . . . . . .  D ADDR   00D0H   A   
+RESET. . . . . . .  C ADDR   0011H   A   
+SP . . . . . . . .  D ADDR   0081H   A   
+T0_ISR . . . . . .  C ADDR   0090H   A   
+T1_ISR . . . . . .  C ADDR   0062H   A   
+T1_ISR_BODY. . . .  C ADDR   006CH   A   
+T1_ISR_EX. . . . .  C ADDR   0085H   A   
+T2_ISR . . . . . .  C ADDR   0090H   A   
+TCON . . . . . . .  D ADDR   0088H   A   
+TH1. . . . . . . .  D ADDR   008DH   A   
+TH1_INIT . . . . .  N NUMB   00FBH   A   
+TMOD . . . . . . .  D ADDR   0089H   A   
+TO_7SEG. . . . . .  C ADDR   0091H   A   
+TO_CNT . . . . . .  C ADDR   0000H   A   
+TO_RING. . . . . .  C ADDR   00A1H   A   
+TO_SEG . . . . . .    ----   -----       
+UART_ISR . . . . .  C ADDR   0090H   A   
+
+
+REGISTER BANK(S) USED: 0 
+
+
+ASSEMBLY COMPLETE.  0 WARNING(S), 5 ERROR(S)

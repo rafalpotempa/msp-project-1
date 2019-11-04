@@ -1,0 +1,168 @@
+A51 MACRO ASSEMBLER  P6_7SEG                                                              10/21/2019 10:36:08 PAGE     1
+
+
+MACRO ASSEMBLER A51 V8.02c
+OBJECT MODULE PLACED IN .\Objects\p6_7seg.obj
+ASSEMBLER INVOKED BY: C:\Keil_v5\C51\BIN\A51.EXE p6_7seg.asm SET(SMALL) DEBUG PRINT(.\Listings\p6_7seg.lst) OBJECT(.\Obj
+                      ects\p6_7seg.obj) EP
+
+LOC  OBJ            LINE     SOURCE
+
+                       1     ;------------------------------------------------
+                       2     ; Wyswietlacz 7-segmentowy dekdowanie
+                       3     ; P0 - segmenty
+                       4     ; P1 - cyfry
+                       5     ;------------------------------------------------
+                       6     
+                       7     ; Symboliczne wartosci do inicjalizacji licznikow i dzielnikow
+                       8     ; Latwosc zmiany wartosc
+  0010                 9     TH0_INIT        EQU     16
+  0005                10     DV_T0_INIT      EQU     5
+                      11     
+----                  12     DSEG    AT      28H
+0028                  13     DV_T0:  DS      1
+0029                  14     CNT:    DS      1
+                      15     
+----                  16     BSEG    AT      0H      
+                      17     
+----                  18     CSEG AT 0H
+0000                  19     RESET:
+0000 012D             20             AJMP    INIT_SYSTEM; Instrukcja skoku w obrebie 2kB sektora
+                      21             ;Wektory przerwan
+0003                  22     ORG 0003H
+0003 0173             23             AJMP    INT0_ISR
+000B                  24     ORG 000BH
+000B 0154             25             AJMP    T0_ISR
+0013                  26     ORG 0013H
+0013 0173             27             AJMP    INT1_ISR
+001B                  28     ORG 001BH
+001B 0173             29             AJMP    T1_ISR
+0023                  30     ORG 0023H
+0023 0173             31             AJMP    UART_ISR
+002B                  32     ORG 002BH
+002B 0173             33             AJMP    T2_ISR
+                      34     
+002D                  35     INIT_SYSTEM:
+002D                  36     CLR_MEM:
+002D 7F58             37             MOV             R7,#88;
+002F 7808             38             MOV             R0,#8
+0031 7400             39             MOV             A,#0;
+0033                  40     CLR_MEM_LP:
+0033 F6               41             MOV             @R0,A
+0034 08               42             INC             R0
+0035 DFFC             43             DJNZ    R7,CLR_MEM_LP
+                      44     
+0037                  45     INIT_STACK:
+0037 75817F           46             MOV             SP,#127         
+003A 7586FF           47             MOV             P0+6,#0FFh
+003D 758000           48             MOV             P0,#0
+0040 759001           49             MOV             P1,#1
+0043 752805           50             MOV             DV_T0,#DV_T0_INIT
+                      51     
+0046                  52     INIT_TIMER:
+0046 758C10           53             MOV             TH0,#TH0_INIT   
+                      54     ;GATE|C/nT|M1|M0
+                      55     ;MODE 0 - 8bit TH + div 5bit  TL
+                      56     ;MODE 1 - 16 bit TH + TL
+                      57     ;MODE 2 - 8 bit TH ld TL
+A51 MACRO ASSEMBLER  P6_7SEG                                                              10/21/2019 10:36:08 PAGE     2
+
+                      58     ;MODE 3 - 2 x 8bit TL->T0, TH->T1
+0049 758911           59             MOV     TMOD,#11H
+                      60     ;TF1|TR1|TF0|TR0|IE1|IT1|IE0|IT1
+                      61     ;TFx - Timer OVF INT trigger
+                      62     ;TRx - Timer Run
+                      63     ;IEx - Ext Interrupt detection (Auto CLR after reception)
+                      64     ;ITx - 0 - Level/ 1 - Edge Int triggering
+004C 758850           65             MOV     TCON,#50H
+004F                  66     INIT_INT:
+                      67     ;EA|-|ET2|ES|ET1|EX1|ET0|EX0
+                      68     ;EA - Global Int Enable
+                      69     ;ET - Timer
+                      70     ;ES - Serial
+                      71     ;EX - External
+004F 75A88A           72             MOV     IE,#10001010B
+                      73     
+0052                  74     MAIN_LOOP:
+0052 80FE             75             SJMP    MAIN_LOOP
+                      76             
+0054                  77     T0_ISR:
+                      78             ;Zachowujemy rejestry ktore ulegaja zmianie
+0054 C0D0             79             PUSH    PSW
+0056 C0E0             80             PUSH    ACC     
+0058 758C10           81             MOV             TH0,#TH0_INIT
+                      82             ;Podzial programowy
+005B D52810           83             DJNZ    DV_T0,T0_ISR_EX
+005E 752805           84             MOV             DV_T0,#DV_T0_INIT       
+0061                  85     T0_ISR_BODY:    
+0061 900074           86             MOV             DPTR,#TO_7SEG
+0064 E529             87             MOV             A,CNT
+0066 04               88             INC             A
+0067 540F             89             ANL             A,#0FH
+0069 F529             90             MOV             CNT,A
+006B 93               91             MOVC    A,@A + DPTR
+006C F580             92             MOV             P0,A    
+006E                  93     T0_ISR_EX:      
+006E D0E0             94             POP             ACC
+0070 D0D0             95             POP             PSW
+0072 32               96             RETI
+                      97     
+0073                  98     INT0_ISR:
+0073                  99     INT1_ISR:
+0073                 100     UART_ISR:
+0073                 101     T1_ISR:
+0073                 102     T2_ISR:
+0073 32              103             RETI
+                     104             
+0074                 105     TO_7SEG:        
+0074 DE82ECE6        106             DB      0xDE, 0x82, 0xEC, 0xE6
+0078 B2767EC2        107             DB      0xB2, 0x76, 0x7E, 0xC2
+007C FEF61CBA        108             DB      0xFE, 0xF6, 0x1C, 0xBA
+0080 F8FA2000        109             DB      0xF8, 0xFA, 0x20, 0x00
+                     110                     
+                     111     
+                     112     END     
+A51 MACRO ASSEMBLER  P6_7SEG                                                              10/21/2019 10:36:08 PAGE     3
+
+SYMBOL TABLE LISTING
+------ ----- -------
+
+
+N A M E             T Y P E  V A L U E   ATTRIBUTES
+
+ACC. . . . . . . .  D ADDR   00E0H   A   
+CLR_MEM. . . . . .  C ADDR   002DH   A   
+CLR_MEM_LP . . . .  C ADDR   0033H   A   
+CNT. . . . . . . .  D ADDR   0029H   A   
+DV_T0. . . . . . .  D ADDR   0028H   A   
+DV_T0_INIT . . . .  N NUMB   0005H   A   
+IE . . . . . . . .  D ADDR   00A8H   A   
+INIT_INT . . . . .  C ADDR   004FH   A   
+INIT_STACK . . . .  C ADDR   0037H   A   
+INIT_SYSTEM. . . .  C ADDR   002DH   A   
+INIT_TIMER . . . .  C ADDR   0046H   A   
+INT0_ISR . . . . .  C ADDR   0073H   A   
+INT1_ISR . . . . .  C ADDR   0073H   A   
+MAIN_LOOP. . . . .  C ADDR   0052H   A   
+P0 . . . . . . . .  D ADDR   0080H   A   
+P1 . . . . . . . .  D ADDR   0090H   A   
+PSW. . . . . . . .  D ADDR   00D0H   A   
+RESET. . . . . . .  C ADDR   0000H   A   
+SP . . . . . . . .  D ADDR   0081H   A   
+T0_ISR . . . . . .  C ADDR   0054H   A   
+T0_ISR_BODY. . . .  C ADDR   0061H   A   
+T0_ISR_EX. . . . .  C ADDR   006EH   A   
+T1_ISR . . . . . .  C ADDR   0073H   A   
+T2_ISR . . . . . .  C ADDR   0073H   A   
+TCON . . . . . . .  D ADDR   0088H   A   
+TH0. . . . . . . .  D ADDR   008CH   A   
+TH0_INIT . . . . .  N NUMB   0010H   A   
+TMOD . . . . . . .  D ADDR   0089H   A   
+TO_7SEG. . . . . .  C ADDR   0074H   A   
+UART_ISR . . . . .  C ADDR   0073H   A   
+
+
+REGISTER BANK(S) USED: 0 
+
+
+ASSEMBLY COMPLETE.  0 WARNING(S), 0 ERROR(S)
