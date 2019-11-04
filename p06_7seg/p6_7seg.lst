@@ -1,0 +1,139 @@
+     1                  ;------------------------------------------------
+     2                  ; Wyswietlacz 7-segmentowy dekdowanie
+     3                  ; P0 - segmenty
+     4                  ; P1 - cyfry
+     5                  ;------------------------------------------------
+     6                  
+     7                  ; Symboliczne wartosci do inicjalizacji licznikow i dzielnikow
+     8                  ; Latwosc zmiany wartosc
+     9        0010      TH0_INIT	EQU	16
+    10        0005      DV_T0_INIT	EQU	5
+    11                  
+    12                  DSEG	AT	28H
+***** B£¥D 2 : NIEZNANY MNEMONIK *****
+    13                  DV_T0:	DS	1
+***** B£¥D 2 : NIEZNANY MNEMONIK *****
+    14                  CNT:	DS	1
+***** B£¥D 2 : NIEZNANY MNEMONIK *****
+    15                  
+    16                  BSEG	AT	0H	
+***** B£¥D 2 : NIEZNANY MNEMONIK *****
+    17                  
+    18                  CSEG AT 0H
+***** B£¥D 2 : NIEZNANY MNEMONIK *****
+    19  0000:           RESET:
+    20  0000: 01 0E     	AJMP	INIT_SYSTEM; Instrukcja skoku w obrebie 2kB sektora
+    21                  	;Wektory przerwan
+    22                  ORG 0003H
+***** B£¥D 2 : NIEZNANY MNEMONIK *****
+    23  0002: 01 53     	AJMP	INT0_ISR
+    24                  ORG 000BH
+***** B£¥D 2 : NIEZNANY MNEMONIK *****
+    25  0004: 01 35     	AJMP	T0_ISR
+    26                  ORG 0013H
+***** B£¥D 2 : NIEZNANY MNEMONIK *****
+    27  0006: 01 53     	AJMP	INT1_ISR
+    28                  ORG 001BH
+***** B£¥D 2 : NIEZNANY MNEMONIK *****
+    29  0008: 01 53     	AJMP	T1_ISR
+    30                  ORG 0023H
+***** B£¥D 2 : NIEZNANY MNEMONIK *****
+    31  000A: 01 53     	AJMP	UART_ISR
+    32                  ORG 002BH
+***** B£¥D 2 : NIEZNANY MNEMONIK *****
+    33  000C: 01 53     	AJMP	T2_ISR
+    34                  
+    35  000E:           INIT_SYSTEM:
+    36  000E:           CLR_MEM:
+    37  000E: 7F 58     	MOV		R7,#88;
+    38  0010: 78 08     	MOV		R0,#8
+    39  0012: 74 00     	MOV		A,#0;
+    40  0014:           CLR_MEM_LP:
+    41  0014: F6        	MOV		@R0,A
+    42  0015: 08        	INC		R0
+    43  0016: DF FC     	DJNZ	R7,CLR_MEM_LP
+    44                  
+    45  0018:           INIT_STACK:
+    46  0018: 75 81 7F  	MOV		SP,#127		
+    47  001B: 75 86 FF  	MOV		P0+6,#0FFh
+***** OSTRZE¯ENIE 1 : NIE ISTNIEJ¥CY ADRES WEWNÊTRZNEGO RAMU *****
+    48  001E: 75 80 00  	MOV		P0,#0
+    49  0021: 75 90 01  	MOV		P1,#1
+    50  0024: 75 00 00  	MOV		DV_T0,#DV_T0_INIT
+***** B£¥D 15 : Z£Y TYP WYRA¯ENIA DIRECT *****
+    51                  
+    52  0027:           INIT_TIMER:
+    53  0027: 75 8C 10  	MOV		TH0,#TH0_INIT	
+    54                  ;GATE|C/nT|M1|M0
+    55                  ;MODE 0 - 8bit TH + div 5bit  TL
+    56                  ;MODE 1 - 16 bit TH + TL
+    57                  ;MODE 2 - 8 bit TH ld TL
+    58                  ;MODE 3 - 2 x 8bit TL->T0, TH->T1
+    59  002A: 75 89 11  	MOV	TMOD,#11H
+    60                  ;TF1|TR1|TF0|TR0|IE1|IT1|IE0|IT1
+    61                  ;TFx - Timer OVF INT trigger
+    62                  ;TRx - Timer Run
+    63                  ;IEx - Ext Interrupt detection (Auto CLR after reception)
+    64                  ;ITx - 0 - Level/ 1 - Edge Int triggering
+    65  002D: 75 88 50  	MOV	TCON,#50H
+    66  0030:           INIT_INT:
+    67                  ;EA|-|ET2|ES|ET1|EX1|ET0|EX0
+    68                  ;EA - Global Int Enable
+    69                  ;ET - Timer
+    70                  ;ES - Serial
+    71                  ;EX - External
+    72  0030: 75 A8 8A  	MOV	IE,#10001010B
+    73                  
+    74  0033:           MAIN_LOOP:
+    75  0033: 80 FE     	SJMP	MAIN_LOOP
+    76                  	
+    77  0035:           T0_ISR:
+    78                  	;Zachowujemy rejestry ktore ulegaja zmianie
+    79  0035: C0 D0     	PUSH	PSW
+    80  0037: C0 E0     	PUSH	ACC	
+    81  0039: 75 8C 10  	MOV		TH0,#TH0_INIT
+    82                  	;Podzial programowy
+    83  003C: D5 00 00  	DJNZ	DV_T0,T0_ISR_EX
+***** B£¥D 15 : Z£Y TYP WYRA¯ENIA DIRECT *****
+    84  003F: 75 00 00  	MOV		DV_T0,#DV_T0_INIT	
+***** B£¥D 15 : Z£Y TYP WYRA¯ENIA DIRECT *****
+    85  0042:           T0_ISR_BODY:	
+    86  0042: 90 00 54  	MOV		DPTR,#TO_7SEG
+    87  0045: E5 00     	MOV		A,CNT
+***** B£¥D 15 : Z£Y TYP WYRA¯ENIA DIRECT *****
+    88  0047: 04        	INC		A
+    89  0048: 54 0F     	ANL		A,#0FH
+    90  004A: F5 00     	MOV		CNT,A
+***** B£¥D 15 : Z£Y TYP WYRA¯ENIA DIRECT *****
+    91                  	MOVC	A,@A + DPTR
+***** B£¥D 11 : Z£Y OPERAND 2 *****
+    92  004C: F5 80     	MOV		P0,A	
+    93  004E:           T0_ISR_EX:	
+    94  004E: D0 E0     	POP		ACC
+    95  0050: D0 D0     	POP		PSW
+    96  0052: 32        	RETI
+    97                  
+    98  0053:           INT0_ISR:
+    99  0053:           INT1_ISR:
+   100  0053:           UART_ISR:
+   101  0053:           T1_ISR:
+   102  0053:           T2_ISR:
+   103  0053: 32        	RETI
+   104                  	
+   105  0054:           TO_7SEG:	
+   106  0054: 00 52 00  	DB	0xDE, 0x82, 0xEC, 0xE6
+***** B£¥D 24 : Z£Y FORMAT LICZBY *****
+        0057: 00 
+   107  0058: 00 4C 00  	DB	0xB2, 0x76, 0x7E, 0xC2
+***** B£¥D 24 : Z£Y FORMAT LICZBY *****
+        005B: 00 
+   108  005C: 00 00 00  	DB	0xFE, 0xF6, 0x1C, 0xBA
+***** B£¥D 24 : Z£Y FORMAT LICZBY *****
+        005F: 00 
+   109  0060: 00 00 14  	DB	0xF8, 0xFA, 0x20, 0x00
+***** B£¥D 24 : Z£Y FORMAT LICZBY *****
+        0063: 00 
+   110                  		
+   111                  
+   112                  END	
+***** B£¥D 31 : SPODZIEWANA ETYKIETA Z ':' *****

@@ -1,0 +1,3 @@
+".\Objects\p10_clock_led.obj" 
+TO ".\Objects\p10_clock_led" 
+PRINT(".\Listings\p10_clock_led.m51") RAMSIZE(256) 
