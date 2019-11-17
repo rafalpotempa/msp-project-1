@@ -10,15 +10,16 @@
       <TargetName>Target 1</TargetName>
       <ToolsetNumber>0x0</ToolsetNumber>
       <ToolsetName>MCS-51</ToolsetName>
+      <uAC6>0</uAC6>
       <TargetOption>
         <TargetCommonOption>
-          <Device>8032 (all Variants)</Device>
-          <Vendor>Generic</Vendor>
-          <Cpu>IRAM(0-0xFF) CLOCK(12000000)</Cpu>
+          <Device>M8051EW</Device>
+          <Vendor>Mentor Graphics Co.</Vendor>
+          <Cpu>IRAM(0 - 0xFF) XRAM(0-0xFFFF) IROM(0-0xFFFF) CLOCK(12000000) MOD517DP</Cpu>
           <FlashUtilSpec></FlashUtilSpec>
           <StartupFile>"LIB\STARTUP.A51" ("Standard 8051 Startup Code")</StartupFile>
           <FlashDriverDll></FlashDriverDll>
-          <DeviceId>2904</DeviceId>
+          <DeviceId>3227</DeviceId>
           <RegisterFile>REG52.H</RegisterFile>
           <MemoryEnv></MemoryEnv>
           <Cmp></Cmp>
@@ -107,13 +108,13 @@
         </CommonProperty>
         <DllOption>
           <SimDllName>S8051.DLL</SimDllName>
-          <SimDllArguments></SimDllArguments>
-          <SimDlgDll>DP51.DLL</SimDlgDll>
-          <SimDlgDllArguments>-p52</SimDlgDllArguments>
+          <SimDllArguments>-mex -m8051EW</SimDllArguments>
+          <SimDlgDll>DCore51.DLL</SimDlgDll>
+          <SimDlgDllArguments>-pM8051EW</SimDlgDllArguments>
           <TargetDllName>S8051.DLL</TargetDllName>
-          <TargetDllArguments></TargetDllArguments>
-          <TargetDlgDll>TP51.DLL</TargetDlgDll>
-          <TargetDlgDllArguments>-p52</TargetDlgDllArguments>
+          <TargetDllArguments>-m8051EW -mex</TargetDllArguments>
+          <TargetDlgDll>TCore51.DLL</TargetDlgDll>
+          <TargetDlgDllArguments>-pM8051EW</TargetDlgDllArguments>
         </DllOption>
         <DebugOption>
           <OPTHX>
@@ -148,7 +149,7 @@
             <RestoreSysVw>1</RestoreSysVw>
           </Target>
           <RunDebugAfterBuild>0</RunDebugAfterBuild>
-          <TargetSelection>-1</TargetSelection>
+          <TargetSelection>0</TargetSelection>
           <SimDlls>
             <CpuDll></CpuDll>
             <CpuDllArguments></CpuDllArguments>
@@ -162,7 +163,7 @@
             <PeripheralDll></PeripheralDll>
             <PeripheralDllArguments></PeripheralDllArguments>
             <InitializationFile></InitializationFile>
-            <Driver></Driver>
+            <Driver>BIN\MON51.DLL</Driver>
           </TargetDlls>
         </DebugOption>
         <Utilities>
@@ -195,12 +196,12 @@
             <UseMultipleDPTR>0</UseMultipleDPTR>
             <UseOnchipXram>0</UseOnchipXram>
             <HadIRAM>1</HadIRAM>
-            <HadXRAM>0</HadXRAM>
-            <HadIROM>0</HadIROM>
+            <HadXRAM>1</HadXRAM>
+            <HadIROM>1</HadIROM>
             <Moda2>0</Moda2>
             <Moddp2>0</Moddp2>
             <Modp2>0</Modp2>
-            <Mod517dp>0</Mod517dp>
+            <Mod517dp>1</Mod517dp>
             <Mod517au>0</Mod517au>
             <Mode2>0</Mode2>
             <useCB>0</useCB>
@@ -217,12 +218,14 @@
             <Mx51P>0</Mx51P>
             <hadXRAM2>0</hadXRAM2>
             <uocXram2>0</uocXram2>
+            <hadXRAM3>0</hadXRAM3>
             <ModC2>0</ModC2>
             <ModH2>0</ModH2>
             <Mdu_R515>0</Mdu_R515>
             <Mdu_F120>0</Mdu_F120>
             <Psoc>0</Psoc>
             <hadIROM2>0</hadIROM2>
+            <hadIROM3>0</hadIROM3>
             <ModSmx2>0</ModSmx2>
             <cBanks>0</cBanks>
             <xBanks>0</xBanks>
@@ -268,9 +271,9 @@
                 <Size>0x0</Size>
               </Ocr3>
               <IRO>
-                <Type>0</Type>
+                <Type>1</Type>
                 <StartAddress>0x0</StartAddress>
-                <Size>0x0</Size>
+                <Size>0x10000</Size>
               </IRO>
               <IRA>
                 <Type>0</Type>
@@ -280,7 +283,7 @@
               <XRA>
                 <Type>0</Type>
                 <StartAddress>0x0</StartAddress>
-                <Size>0x0</Size>
+                <Size>0x10000</Size>
               </XRA>
               <XRA512>
                 <Type>0</Type>
@@ -292,6 +295,16 @@
                 <StartAddress>0x0</StartAddress>
                 <Size>0x0</Size>
               </IROM512>
+              <XRA513>
+                <Type>0</Type>
+                <StartAddress>0x0</StartAddress>
+                <Size>0x0</Size>
+              </XRA513>
+              <IROM513>
+                <Type>0</Type>
+                <StartAddress>0x0</StartAddress>
+                <Size>0x0</Size>
+              </IROM513>
             </OnChipMemories>
           </Target51Misc>
           <C51>

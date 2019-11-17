@@ -12,6 +12,8 @@ DV_T0_INIT	EQU	5
 DSEG	AT	28H
 DV_T0:	DS	1
 CNT:	DS	1
+CNT4:	DS  1	
+DATA4:	DS	4		
 
 BSEG	AT	0H	
 
@@ -70,7 +72,14 @@ INIT_INT:
 ;ES - Serial
 ;EX - External
 	MOV	IE,#10001010B
-
+	mov CNT4,#0
+	mov P1,#0ffh
+	MOV DATA4,#0
+	MOV DATA4+1,#0
+	MOV DATA4+2,#0
+	MOV DATA4+3,#0
+	MOV	R0,#2BH
+	
 MAIN_LOOP:
 	SJMP	MAIN_LOOP
 	
@@ -79,18 +88,28 @@ T0_ISR:
 	PUSH	PSW
 	PUSH	ACC	
 	MOV		TH0,#TH0_INIT
-	;Podzial programowy
-	DJNZ	DV_T0,T0_ISR_EX
-	MOV		DV_T0,#DV_T0_INIT	
-T0_ISR_BODY:	
-	MOV		DPTR,#TO_7SEG
-	MOV		A,CNT
-	INC		A
-	ANL		A,#0FH
-	MOV		CNT,A
-	MOVC	A,@A + DPTR
-	MOV		P0,A	
-T0_ISR_EX:	
+	MOV	R1,#2BH
+	INC @R1
+	CJNE @R1,#10,OMIN1
+// decimal minutes
+	MOV @R1,#0
+	INC R1
+	INC @R1
+	CJNE @R1,#6,OMIN1
+// hours
+	MOV @R1,#0
+	INC R1
+	INC @R1
+	CJNE @R1,#10,OMIN1
+	MOV @R1,#0
+// hours
+	MOV @R1,#0
+	INC R1
+	INC @R1
+	CJNE @R1,#10,OMIN1
+	MOV @R1,#0
+	
+OMIN1:	
 	POP		ACC
 	POP		PSW
 	RETI
@@ -99,6 +118,29 @@ INT0_ISR:
 INT1_ISR:
 UART_ISR:
 T1_ISR:
+	mov TH1,#250
+	PUSH	PSW
+	PUSH	ACC	
+	mov DPTR,#TO_DEC
+	MOV		A,CNT4
+	CJNE    A,#04H,omin
+	MOV		CNT4,#0
+	MOV	R0,#2BH
+	MOV		A,CNT4
+omin:
+	MOVC	A,@A + DPTR
+	MOV		P1,A	
+	MOV A,@R0
+	INC R0
+	mov DPTR,#TO_7SEG
+	MOVC	A,@A + DPTR
+	MOV		P0,A
+	
+	INC		CNT4
+	POP		ACC
+	POP		PSW
+	RETI
+
 T2_ISR:
 	RETI
 	
@@ -107,6 +149,9 @@ TO_7SEG:
 	DB	0xB2, 0x76, 0x7E, 0xC2
 	DB	0xFE, 0xF6, 0x1C, 0xBA
 	DB	0xF8, 0xFA, 0x20, 0x00
-		
 
-END	
+TO_DEC:
+	DB	0xfe, 0xfd,0xfb,0xf7
+
+
+END
