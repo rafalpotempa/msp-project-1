@@ -84,21 +84,21 @@ T0_ISR:
 	MOV 	CNT100,#BASIC_TIME
 // minutes	
 	MOV		R1,#DATA4
-	INC 	@R1
-	CJNE 	@R1,#10,BREAK1
-	MOV 	@R1,#0
+	DEC 	@R1
+	CJNE 	@R1,#255,BREAK1
+	MOV 	@R1,#9
 // decimal minutes
 	INC 	R1
-	INC		@R1
-	CJNE 	@R1,#6,BREAK1
-	MOV 	@R1,#0
+	DEC		@R1
+	CJNE 	@R1,#255,BREAK1
+	MOV 	@R1,#5
 // dash
 	INC 	R1
 // hours
 	INC 	R1
-	INC 	@R1
-	CJNE 	@R1,#10,BREAK1
-	MOV 	@R1,#0
+	DEC 	@R1
+	CJNE 	@R1,#255,BREAK1
+	MOV 	@R1,#9
 
 BREAK1:	
 	POP		ACC
